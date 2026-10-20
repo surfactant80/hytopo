@@ -386,6 +386,56 @@ Key columns:
 
 ---
 
+### Cage PDB residue names
+
+`07_cages_pdb/cages_frame_*.pdb` stores **one HETATM residue per cage**:
+
+* `resid` is the cage index within the frame;
+* the first atom of each residue, `CNT` with residue name `CGE` (element `X`),
+  marks the cage centre;
+* every water oxygen of that cage carries the cage-type residue name, a
+  pseudo-element in the `name`/`element` columns, and the same type code in the
+  B-factor column, so VMD/PyMOL can colour by type;
+* `CONECT` records follow the ring edges of the cage, and coordinates are
+  unwrapped around the centre so a cage crossing the periodic boundary stays
+  whole.
+
+PDB residue names are limited to three characters, so cage types that share a
+code are distinguished by the B-factor:
+
+| residue | cage type | pseudo-element | B-factor |
+|---|---|---|---|
+| `SML` | `5^12` | C | 1 |
+| `LR1` | `5^12 6^2` | N | 2 |
+| `LR2` | `5^12 6^4` | S | 3 |
+| `SHM` | `4^3 5^6 6^3` | P | 4 |
+| `SHL` | `5^12 6^8` | F | 5 |
+| `T13` | `5^12 6^1` | O | 6 |
+| `T15` | `5^12 6^3` | B | 7 |
+| `T17` | `5^12 6^5` | I | 8 |
+| `T18` | `5^12 6^6` | K | 9 |
+| `A13` | `4^1 5^10 6^2` | V | 10 |
+| `A14` | `4^1 5^10 6^3` | Ti | 11 |
+| `A15` | `4^1 5^10 6^4` | Cr | 12 |
+| `A16` | `4^2 5^8 6^4` | Mn | 13 |
+| `HSM` | `half 5^12` | Xe | 21 |
+| `HLR` | `half 5^12 6^2` / `half 5^12 6^4` | Xe | 22 / 23 |
+| `HSH` | `half 4^3 5^6 6^3` / `half 5^12 6^8` | Xe | 24 / 25 |
+| `HT1` | `half 5^12 6^1` / `6^3` / `6^5` / `6^6` | Xe | 26 / 27 / 28 / 29 |
+| `HA1` | `half 4^1 5^10 6^2` / `6^3` / `6^4`, `half 4^2 5^8 6^4` | Xe | 30 / 31 / 32 / 33 |
+| `P12` | `partial 5^12` | Al | 45 |
+| `P14` | `partial 5^12 6^2` | Si | 46 |
+| `P16` | `partial 5^12 6^4` | Cl | 47 |
+| `INC` | incipient cage | Y | 41 |
+| `OPN` | open cage | Zr | 42 |
+| `DST` | distorted cage | Nb | 43 |
+| `PAR` | generic partial cage | Xe | 44 |
+| `OTH` | other | Xe | 50 |
+
+The same codes appear in the `cage_type` column of the tracking and transition
+tables, so a residue name maps one-to-one onto the statistics.
+
+
 ## What the analysers do
 
 **HOP.** Each water oxygen is described by the four nearest neighbours: the
