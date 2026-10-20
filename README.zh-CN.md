@@ -153,7 +153,7 @@ pip install -e ".[dev]"
 ### 从 wheel
 
 ```bash
-pip install hytopo-1.0.0-py3-none-any.whl
+pip install hytopo-1.0.1-py3-none-any.whl
 ```
 
 ### 用 conda
@@ -544,8 +544,30 @@ generate_network_from_tables("run/03_tracking", outdir="run")
 
 ## 引用与许可
 
-如在论文中使用 hytopo，请引用配套手稿
-（*HyTopo: A High-Performance Hierarchical Algorithm for Mapping the Structural
-Evolution and Transition Networks of Gas Hydrates*）。
+如在论文中使用 hytopo，请引用预印本：
 
-许可证：由作者在公开发布前确定（学术软件常用 MIT、BSD-3-Clause 或 GPL-3.0）。
+> Zherui Chen, Shuquan Huang, Ke Xu, Zhanbo Li, Xinyu Song, Haijun Wang,
+> Dingyuan Tang, Qingxia Liu, Yajun Deng. *HyTopo: A High-Performance
+> Hierarchical Algorithm for Mapping the Structural Evolution and Transition
+> Networks of Gas Hydrates*. arXiv:2609.37036 (2026).
+> <https://arxiv.org/abs/2609.37036>
+
+```bibtex
+@misc{chen2026hytopo,
+  title  = {HyTopo: A High-Performance Hierarchical Algorithm for Mapping the
+            Structural Evolution and Transition Networks of Gas Hydrates},
+  author = {Chen, Zherui and Huang, Shuquan and Xu, Ke and Li, Zhanbo and
+            Song, Xinyu and Wang, Haijun and Tang, Dingyuan and Liu, Qingxia
+            and Deng, Yajun},
+  year   = {2026},
+  eprint = {2609.37036},
+  archivePrefix = {arXiv},
+  primaryClass = {physics.comp-ph},
+  url    = {https://arxiv.org/abs/2609.37036}
+}
+```
+
+**许可证。** hytopo 以 **GNU 宽通用公共许可证第 3 版或其后续版本**
+（LGPL-3.0-or-later）发布，详见 `LICENSE`（LGPL-3.0）与 `COPYING`
+（GPL-3.0，LGPL 通过引用并入）。你可以把 hytopo 作为库用于自己的程序
+（包括闭源程序），修改并分发 hytopo 本身时需继续使用 LGPL。

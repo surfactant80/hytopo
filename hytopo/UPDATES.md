@@ -1,5 +1,13 @@
 # HyTopo 更新说明
 
+## v1.0.1 — 许可证与引用
+
+- 许可证改为 **LGPL-3.0-or-later**：新增 `LICENSE`（LGPL-3.0 全文）与
+  `COPYING`（GPL-3.0 全文，LGPL 通过引用并入），`pyproject.toml` 增加
+  `license` 字段与 OSI 分类器，wheel 随包携带两份许可证文本。
+- 引用信息改为 arXiv 预印本：<https://arxiv.org/abs/2609.37036>，中英文 README
+  各附 BibTeX 条目。
+
 ## v1.0.0 — 整理与打包（包名 hytopo）
 
 - **包名统一为 `hytopo`**：目录 `HyTopo/` → `hytopo/`，命令 `hytopo`，

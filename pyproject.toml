@@ -4,9 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hytopo"
-version = "1.0.0"
+version = "1.0.1"
 description = "Hydrate topology analyzer: HOP classification, cage recognition, cage tracking, phase and nucleation analysis for molecular dynamics trajectories"
 readme = "README.md"
+license = "LGPL-3.0-or-later"
+license-files = ["LICENSE", "COPYING"]
 requires-python = ">=3.10"
 authors = [
     { name = "HyTopo authors" },
