@@ -5,7 +5,6 @@ __pycache__/
 *.nbc
 *.egg-info/
 /build/
-/dist/
 .venv/
 venv/
 
