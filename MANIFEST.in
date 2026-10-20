@@ -1,0 +1,7 @@
+include README.md
+include README.zh-CN.md
+include pyproject.toml
+include hytopo/UPDATES.md
+recursive-include hytopo/ideal_crystal *.pdb *.json
+recursive-include benchmarks *.md *.json
+global-exclude __pycache__ *.py[cod]

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.nbi
+*.nbc
+*.egg-info/
+/build/
+/dist/
+.venv/
+venv/
+
+# test data and run outputs (large, not part of the package)
+/ARAS1.tpr
+/ARAS1.xtc
+/.ARAS1.xtc_offsets.*
+/原稿.pdf
+/aras1_500/
+/_pkgtest*/
+/_pkgtest_run/
+/hydrate_analysis/
+/run*/
+*.log
+
+# editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# old release archive
+/hytopo.zip
+
