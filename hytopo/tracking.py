@@ -178,7 +178,16 @@ class CageTracker:
         environments = getattr(cages, "guest_environments", None) or []
         window = max(1, int(ENVIRONMENT_WINDOW))
 
+        # a detected cage is itself a state: the guest environment is only
+        # used when no cage was found around that guest
+        cage_by_guest = {
+            int(cage.guest_id): cage.cage_type
+            for cage in (getattr(cages, "cages", None) or [])
+        }
+
         for guest_id, state in enumerate(environments):
+            state = cage_by_guest.get(int(guest_id)) or state
+
             if not state or state == "unknown":
                 continue
 

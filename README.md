@@ -191,7 +191,7 @@ pip install -e ".[dev]"
 ### From a wheel
 
 ```bash
-pip install hytopo-1.0.3-py3-none-any.whl
+pip install hytopo-1.0.4-py3-none-any.whl
 ```
 
 ### With conda

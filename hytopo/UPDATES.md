@@ -1,5 +1,13 @@
 # HyTopo 更新说明
 
+## v1.0.4 — 修正：笼型并入客体环境状态
+
+v1.0.3 的环境列表只含 LIQ/interface，导致网络里没有 `LIQ -> 笼` 的边。
+`_track_environments` 现在把检测到的笼型作为该客体的状态，环境标签只用于无笼客体。
+100 帧 ARAS1 结果：`LIQ -> incipient_cage` 48.5 ns⁻¹、`incipient_cage -> LIQ`
+39.3 ns⁻¹、`LIQ -> half 5^12` 5.9 ns⁻¹、`LIQ <-> interface` 26.3 ns⁻¹，
+主通道（incipient/open/half/5^12 6^2）不变，耗时 0.87 s/帧（与 1.0.2 相同）。
+
 ## v1.0.3 — 过渡网络加入真实客体环境（LIQ / interface）
 
 **客体环境**作为网络状态：
