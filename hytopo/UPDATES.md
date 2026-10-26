@@ -1,5 +1,19 @@
 # HyTopo 更新说明
 
+## v1.0.3 — 过渡网络加入真实客体环境（LIQ / interface）
+
+审稿人指出：`Liquid` 不应是记账节点，除非确实由 HOP 判定为液态。本版把
+**客体环境**作为网络状态：
+
+- 对每个客体，统计其第一水化壳（`--guest-radius` 内的水氧）的 HOP 标签：
+  多数液态 → `LIQ`；壳层有序但无笼 → `interface`；检测到笼 → 该笼型。
+- 状态在 `ENVIRONMENT_WINDOW = 3` 帧内做多数平滑（`tracking.py`），抑制单帧标签抖动；
+  纯 `LIQ ↔ interface` 的闪烁明显下降（30 帧内 654 → 398 次）。
+- `build_from_tracker` 把环境变化中**至少一端是非笼态**的跃迁计入网络；
+  笼→笼跃迁仍来自轨迹，避免重复计数。出现/消失仍写入
+  `03_tracking/cage_network_events.dat`；只有 `--skip-hop` 时才回退到 `Unmatched`。
+- 图左侧新增 `LIQ (liquid-like)` 列（`LIQ` 与 `interface` 两个节点）。
+
 ## v1.0.2 — 过渡网络记账节点改名为 Unmatched
 
 审稿意见指出：Figure 7 里的 Liquid 容易被理解为 HOP 分类出的液态水，但它其实是

@@ -1,0 +1,14 @@
+# cage_type appearances disappearances
+4^1_5^10_6^2 5 0
+4^1_5^10_6^3 1 0
+5^12 66 0
+5^12_6^2 163 0
+5^12_6^3 1 0
+distorted_cage 5 1
+half_5^12 74 40
+half_5^12_6^2 63 7
+incipient_cage 452 265
+open_cage 47 8
+partial 17 11
+partial_5^12 12 1
+partial_5^12_6^2 1 0

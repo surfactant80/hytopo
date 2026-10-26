@@ -139,17 +139,19 @@ Cage transitions are aggregated into a directed weighted network with a
 publication-style pathway figure, a side ranking of the strongest transitions,
 and machine-readable node/edge tables.
 
-The bookkeeping node on the left is called **`Unmatched`**, not "Liquid".
-HOP removes fully liquid water before cages are searched, so this node only
-records that no cage could be detected or matched in that frame — it is not a
-HOP LIQ water molecule, and a pathway through it does not imply a return to a
-liquid-like local environment. Tracks are linked between frames by the Jaccard
-overlap of their water sets (`--tracking-water-overlap`), guest identity and
-type continuity, with `--tracking-gap` frames of tolerance for missed
-detections; a track that survives the gap keeps its identity, so a transient
-topological rearrangement is not recorded as an Unmatched–cage–Unmatched
-excursion. A track that really starts or ends is also counted as an
-**appearance** or a **disappearance** in `03_tracking/cage_network_events.dat`.
+The left-most column is the **guest environment**, not a HOP water label. For
+every guest the HOP labels of its first hydration shell (the water oxygens
+within `--guest-radius`) are counted: `LIQ` when the majority is liquid-like,
+`interface` when the shell is ordered (precursor or crystal-like) but no cage is
+detected. The state is smoothed over `ENVIRONMENT_WINDOW = 3` frames, so
+single-frame label flicker does not create edges. A detected cage is itself a
+state, so `LIQ → incipient → … → crystal` and `crystal → LIQ` are genuine
+environment changes of the same guest; tracks are linked between frames by the
+Jaccard overlap of their water sets (`--tracking-water-overlap`), guest identity
+and type continuity, with `--tracking-gap` frames of tolerance for missed
+detections. A track that starts or ends is also counted as an **appearance** or
+a **disappearance** in `03_tracking/cage_network_events.dat`. The bookkeeping
+`Unmatched` node is only used when HOP is unavailable (`--skip-hop`).
 
 ### 8. One-page report and categorised outputs
 
@@ -189,7 +191,7 @@ pip install -e ".[dev]"
 ### From a wheel
 
 ```bash
-pip install hytopo-1.0.2-py3-none-any.whl
+pip install hytopo-1.0.3-py3-none-any.whl
 ```
 
 ### With conda

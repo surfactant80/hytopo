@@ -69,6 +69,10 @@ class CageTransition:
     to_type: str
 
 
+#: frames over which the per-guest environment is smoothed
+ENVIRONMENT_WINDOW = 3
+
+
 @dataclass
 class CageTrack:
     track_id: int
@@ -157,7 +161,52 @@ class CageTracker:
         self._guest_index: dict[int, set[int]] = {}
         self._water_index: dict[int, set[int]] = {}
         self.guest_events: list[dict[str, Any]] = []
+        #: per-guest environment (LIQ / interface / cage type) and the
+        #: state changes that feed the transition network
+        self.guest_state: dict[int, str] = {}
+        self.guest_history: dict[int, list[str]] = {}
+        self.environment_transitions: list[tuple[int, int, str, str]] = []
         self._guest_last_end: dict[int, tuple[int, float, str]] = {}
+
+    def _track_environments(self, frame_index: int, cages: Any) -> None:
+        """Record changes of the per-guest environment.
+
+        A hard majority vote per frame flickers when individual shell waters
+        cross the HOP threshold, so the state is the majority over the last
+        ``EnvironmentWindow`` frames (ties keep the current state).
+        """
+        environments = getattr(cages, "guest_environments", None) or []
+        window = max(1, int(ENVIRONMENT_WINDOW))
+
+        for guest_id, state in enumerate(environments):
+            if not state or state == "unknown":
+                continue
+
+            history = self.guest_history.setdefault(int(guest_id), [])
+            history.append(state)
+
+            if len(history) > window:
+                del history[0]
+
+            counts = Counter(history)
+            top = max(counts.values())
+            candidates = [value for value, count in counts.items() if count == top]
+            previous = self.guest_state.get(int(guest_id))
+
+            if previous in candidates:
+                smooth = previous
+            else:
+                smooth = candidates[0]
+
+            if previous is None:
+                self.guest_state[int(guest_id)] = smooth
+                continue
+
+            if smooth != previous:
+                self.environment_transitions.append(
+                    (int(frame_index), int(guest_id), previous, smooth)
+                )
+                self.guest_state[int(guest_id)] = smooth
 
     def update(
         self,
@@ -168,6 +217,7 @@ class CageTracker:
         oxygen_positions: Optional[np.ndarray] = None,
         box: Optional[np.ndarray] = None,
     ) -> list[CageEvent]:
+        self._track_environments(frame_index, cages)
         records = flatten_cage_records(cages)
 
         events = build_cage_events(

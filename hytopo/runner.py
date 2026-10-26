@@ -447,6 +447,7 @@ def analyze_frame_payload(
             frame=payload.frame_index,
             oxygen_pos=payload.oxygen_positions,
             guest_pos=payload.guest_positions,
+            hop_labels=hop_result.labels,
             box=payload.box,
             global_graph=cage_graph,
             candidate_mask=candidate_mask,

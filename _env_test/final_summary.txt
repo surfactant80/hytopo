@@ -1,0 +1,64 @@
+==
+           HYDRATE ANALYZER FINAL SUMMARY REPORT            
+==
+Generated on: 2026-10-26 18:15:13
+System Top:   ARAS1.tpr
+Total Frames: 30
+Wall Clock Time: 26.53 s
+
+1. NUCLEATION ANALYSIS
+--
+  - Nucleation Status:  [ NOT DETECTED ]
+  - Max Cluster Size:   3102 waters
+  - Method / Threshold: commitment / 3725 waters
+
+2. HYDRATE CRYSTAL PHASE TENDENCY
+--
+  - Dominant phase: sI
+  - Confirmed transitions: 1
+    * frame 2: unknown -> sI (confidence=0.676)
+
+3. CAGE STABILITY & DIVERSITY (Tracking Data)
+--
+  - Total Unique Cages Tracked: 907
+  - Cage Type Distribution (Dominant):
+    * incipient_cage : 407
+    * 5^12_6^2       : 220
+    * 5^12           : 111
+    * half_5^12      : 63
+    * half_5^12_6^2  : 35
+    * open_cage      : 33
+    * 4^1_5^10_6^2   : 12
+    * partial        : 11
+    * 5^12_6^3       : 8
+    * distorted_cage : 3
+    * partial_5^12   : 3
+    * 4^1_5^10_6^4   : 1
+
+  - Average Cage Lifetimes:
+    * 4^1_5^10_6^2   : Avg  2891.67 ps | Max  2900.00 ps
+    * 4^1_5^10_6^4   : Avg  2900.00 ps | Max  2900.00 ps
+    * 5^12           : Avg  2830.63 ps | Max  2900.00 ps
+    * 5^12_6^2       : Avg  2891.36 ps | Max  2900.00 ps
+    * 5^12_6^3       : Avg  2887.50 ps | Max  2900.00 ps
+    * distorted_cage : Avg  2900.00 ps | Max  2900.00 ps
+    * half_5^12      : Avg  1079.37 ps | Max  2900.00 ps
+    * half_5^12_6^2  : Avg  2048.57 ps | Max  2900.00 ps
+    * incipient_cage : Avg   563.64 ps | Max  2900.00 ps
+    * open_cage      : Avg  2769.70 ps | Max  2900.00 ps
+    * partial        : Avg    54.55 ps | Max   300.00 ps
+    * partial_5^12   : Avg  1733.33 ps | Max  2900.00 ps
+
+4. GUEST OCCUPANCY STATISTICS
+--
+  - single    :  14875 events ( 96.5%)
+  - multiple  :    535 events (  3.5%)
+
+5. KINETIC & THERMODYNAMIC DIAGNOSIS
+--
+  - Final Stage Slope (dN/dt): 0.0717 waters/ps
+  - System Status Diagnosis:   STEADY GROWTH
+
+==
+  END OF SUMMARY REPORT                   
+==

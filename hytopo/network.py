@@ -97,6 +97,8 @@ class NetworkControlPanel:
     nodes_table_name = "cage_transition_network_nodes.dat"
     output_figure_name = "cage_transition_network.png"
     events_table_name = "cage_network_events.dat"
+    #: number of frames over which the guest environment is smoothed
+    guest_environment_window = 3
 
 
 class TransitionNetwork:
@@ -223,6 +225,23 @@ class TransitionNetwork:
             self.state_counts[transition.from_type] += 1
             self.state_counts[transition.to_type] += 1
 
+        environment_transitions = getattr(
+            tracker, "environment_transitions", None
+        ) or []
+
+        if environment_transitions:
+            from .cage import NON_CAGE_STATES
+
+            for _frame, _guest, from_state, to_state in environment_transitions:
+                if from_state == to_state:
+                    continue
+                # cage -> cage changes are already counted from the tracks;
+                # only add the ones that touch a non-cage environment
+                if from_state in NON_CAGE_STATES or to_state in NON_CAGE_STATES:
+                    self.transitions[(from_state, to_state)] += 1
+                    self.state_counts[from_state] += 1
+                    self.state_counts[to_state] += 1
+
         for track in tracker.tracks:
             first_cage = getattr(track, "first_type", "") or track.last_type
 
@@ -233,16 +252,22 @@ class TransitionNetwork:
             # detectable cage, *not* a visit to a liquid-like local environment:
             # HOP removes fully liquid water before cages are searched.  The
             # bookkeeping node is called UNMATCHED_NODE, never "Liquid".
-            self.transitions[(UNMATCHED_NODE, first_cage)] += 1
-            self.state_counts[UNMATCHED_NODE] += 1
-            self.state_counts[first_cage] += 1
             self.births[first_cage] += 1
 
-            if getattr(track, "end_reason", "") == "disappeared":
-                self.transitions[(track.last_type, UNMATCHED_NODE)] += 1
-                self.state_counts[track.last_type] += 1
+            # without HOP environments the network still needs a bookkeeping
+            # node for births/deaths; with them, LIQ/interface carry the edges
+            if not environment_transitions:
+                self.transitions[(UNMATCHED_NODE, first_cage)] += 1
                 self.state_counts[UNMATCHED_NODE] += 1
+                self.state_counts[first_cage] += 1
+
+            if getattr(track, "end_reason", "") == "disappeared":
                 self.deaths[track.last_type] += 1
+
+                if not environment_transitions:
+                    self.transitions[(track.last_type, UNMATCHED_NODE)] += 1
+                    self.state_counts[track.last_type] += 1
+                    self.state_counts[UNMATCHED_NODE] += 1
 
     def load_from_tables(
         self,
@@ -277,9 +302,9 @@ class TransitionNetwork:
                 # older tables stored appearance/disappearance as edges to and
                 # from a bookkeeping "Liquid" node; rename it on the fly
                 if from_type == "Liquid":
-                    from_type = UNMATCHED_NODE
+                    from_type = "LIQ"
                 if to_type == "Liquid":
-                    to_type = UNMATCHED_NODE
+                    to_type = "LIQ"
 
                 count = int(parts[2])
 
@@ -377,7 +402,9 @@ class TransitionNetwork:
         return node
 
     def _node_group(self, node: str) -> str:
-        if node == UNMATCHED_NODE:
+        from .cage import NON_CAGE_STATES
+
+        if node == UNMATCHED_NODE or node in NON_CAGE_STATES:
             return "liquid"
 
         if node.startswith("half_"):
@@ -418,8 +445,18 @@ class TransitionNetwork:
         return "white" if luminance < 150 else "#101820"
 
     def _format_node_label(self, node: str) -> str:
+        from .cage import ENV_CRYSTAL, ENV_INTERFACE, ENV_LIQUID, ENV_PRECURSOR
+
         if node == UNMATCHED_NODE:
             return "Unmatched"
+        if node == ENV_LIQUID:
+            return "LIQ"
+        if node == ENV_INTERFACE:
+            return "interface"
+        if node == ENV_PRECURSOR:
+            return "precursor"
+        if node == ENV_CRYSTAL:
+            return "crystal"
 
         if node == "partial":
             return "partial"
@@ -500,6 +537,12 @@ class TransitionNetwork:
             grouped_nodes.setdefault(group, []).append(node)
 
         pos: dict[str, tuple[float, float]] = {}
+
+        from .cage import ENV_INTERFACE, ENV_LIQUID
+
+        for index, node in enumerate((ENV_LIQUID, ENV_INTERFACE)):
+            if node in graph.nodes:
+                pos[node] = (x_position["liquid"], 1.55 - 3.10 * index)
 
         if UNMATCHED_NODE in graph.nodes:
             pos[UNMATCHED_NODE] = (x_position["liquid"], 0.0)
@@ -905,7 +948,7 @@ class TransitionNetwork:
         pos: dict[str, tuple[float, float]],
     ) -> None:
         group_titles = {
-            "liquid": "Unmatched (no cage)",
+            "liquid": "LIQ (liquid-like)",
             "partial": "Partial / open cages",
             "half": "Half cages",
             "transition": "Transition cages",
@@ -1297,7 +1340,7 @@ class TransitionNetwork:
         from matplotlib.lines import Line2D
 
         legend_items = [
-            ("liquid", "Unmatched"),
+            ("liquid", "LIQ / interface"),
             ("partial", "Partial"),
             ("half", "Half"),
             ("transition", "Transition"),

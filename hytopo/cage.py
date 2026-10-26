@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Iterator, Optional, Sequence
 
 import numpy as np
@@ -73,6 +73,63 @@ class GuestCageResult:
     n_local_rings: int
 
 
+ENV_LIQUID = "LIQ"
+ENV_INTERFACE = "interface"
+ENV_PRECURSOR = "precursor"
+ENV_CRYSTAL = "crystal"
+ENV_UNKNOWN = "unknown"
+
+#: states that are not a detected cage (used by the transition network)
+NON_CAGE_STATES = frozenset(
+    {ENV_LIQUID, ENV_INTERFACE, ENV_PRECURSOR, ENV_CRYSTAL, ENV_UNKNOWN}
+)
+
+def classify_guest_environment(
+    hop_labels: Optional[np.ndarray],
+    local_nodes_by_guest: list,
+    min_waters: int = 4,
+) -> list[str]:
+    """Guest environment from the HOP label of its first hydration shell.
+
+    The shell is the set of water oxygens within ``guest_radius`` of the
+    guest centre (the same neighbour list the cage search uses, but
+    *before* the HOP candidate mask removes liquid water).  The node is a
+    property of the guest environment, not of an individual water molecule.
+    """
+    from .config import LABEL_HYD, LABEL_IC, LABEL_IH, LABEL_LIQ, LABEL_PRE, LABEL_UNK
+
+    if hop_labels is None:
+        return [ENV_UNKNOWN] * len(local_nodes_by_guest)
+
+    environments: list[str] = []
+
+    for nodes in local_nodes_by_guest:
+        if nodes is None or len(nodes) < max(1, int(min_waters)):
+            environments.append(ENV_UNKNOWN)
+            continue
+
+        labels = hop_labels[nodes]
+        counts = (
+            (int((labels == LABEL_HYD).sum()) + int((labels == LABEL_IC).sum())
+             + int((labels == LABEL_IH).sum()), ENV_CRYSTAL),
+            (int((labels == LABEL_PRE).sum()), ENV_PRECURSOR),
+            (int((labels == LABEL_UNK).sum()), ENV_INTERFACE),
+            (int((labels == LABEL_LIQ).sum()), ENV_LIQUID),
+        )
+
+        best_count, best_state = max(counts, key=lambda item: item[0])
+
+        if best_count <= 0:
+            environments.append(ENV_UNKNOWN)
+        elif best_state in (ENV_PRECURSOR, ENV_CRYSTAL):
+            # without a detected cage an ordered shell means the guest sits at
+            # an interface, not that it is inside a crystal cavity
+            environments.append(ENV_INTERFACE)
+        else:
+            environments.append(best_state)
+
+    return environments
+
 @dataclass
 class CageAnalysisResult:
     frame: int
@@ -84,6 +141,7 @@ class CageAnalysisResult:
     n_cages: int
     n_local_cycles_total: int
     n_local_rings_total: int
+    guest_environments: list[str] = field(default_factory=list)
 
 
 def signature(ring_ids: tuple[int, ...], rings: list[GuestRing]) -> tuple[int, int, int]:
@@ -1178,6 +1236,7 @@ def analyze_cages_for_frame(
     candidate_mask: Optional[np.ndarray],
     params: CageParameters,
     quiet: bool = False,
+    hop_labels: Optional[np.ndarray] = None,
 ) -> CageAnalysisResult:
     if guest_pos is None or len(guest_pos) == 0:
         return CageAnalysisResult(
@@ -1190,6 +1249,7 @@ def analyze_cages_for_frame(
             n_cages=0,
             n_local_cycles_total=0,
             n_local_rings_total=0,
+            guest_environments=[],
         )
 
     local_nodes_by_guest = select_nodes_within_radius(
@@ -1198,6 +1258,8 @@ def analyze_cages_for_frame(
         box=box,
         radius=params.guest_radius,
     )
+
+    local_nodes_all = local_nodes_by_guest
 
     if candidate_mask is not None:
         local_nodes_by_guest = [
@@ -1212,6 +1274,12 @@ def analyze_cages_for_frame(
         candidate_mask=candidate_mask,
         params=params,
         quiet=quiet,
+    )
+
+    guest_environments = classify_guest_environment(
+        hop_labels=hop_labels,
+        local_nodes_by_guest=local_nodes_all,
+        min_waters=max(4, int(params.min_ring)),
     )
 
     cycle_ids_by_guest = assign_cycles_to_guests(cycles_global, local_nodes_by_guest)
@@ -1266,6 +1334,7 @@ def analyze_cages_for_frame(
         n_cages=len(cages),
         n_local_cycles_total=int(n_local_cycles_total),
         n_local_rings_total=int(n_local_rings_total),
+        guest_environments=guest_environments,
     )
 
 

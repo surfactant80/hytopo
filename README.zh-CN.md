@@ -118,13 +118,15 @@ PDB（标签放在 B-factor 列）供 VMD/PyMOL 着色。
 把笼型跃迁聚合成有向加权网络，绘制论文风格的分栏路径图，右侧给出最强跃迁排名，
 并输出机器可读的节点/边表。
 
-最左侧的节点叫 **`Unmatched`**，不是 “Liquid”。HOP 在搜索笼之前就把完全液态的
-水排除掉了，所以这个节点只表示“这一帧没有检测到/匹配到笼”，是“没看见笼”的记账，
-并不代表这些水分子是 HOP 的 LIQ 态，经过它的路径也不意味着回到液态局部环境。
-相邻帧的笼按水分子集合的 Jaccard 重叠（`--tracking-water-overlap`）、客体身份与
-类型连续性连接，`--tracking-gap` 帧内容忍漏检；能跨过间隙的轨迹保持身份，所以
-短暂的拓扑重排不会被记成 Unmatched–笼–Unmatched 的往返。轨迹真正的起始与结束
-同时记为**出现**与**消失**，写入 `03_tracking/cage_network_events.dat`。
+最左侧一列是**客体环境**，不是水的 HOP 标签。对每个客体，统计其第一水化壳
+（`--guest-radius` 内的水氧）的 HOP 标签：多数是液态 → **`LIQ`**；壳层有序
+（前驱体或类晶体）但没检测到笼 → **`interface`**。状态在 `ENVIRONMENT_WINDOW = 3`
+帧的窗口内做多数平滑，单帧的标签抖动不会产生边。检测到的笼本身也是一种状态，
+所以 `LIQ → incipient → … → crystal` 与 `crystal → LIQ` 是同一客体真实的环境变化；
+相邻帧仍按水分子集合的 Jaccard 重叠（`--tracking-water-overlap`）、客体身份与类型
+连续性连接，`--tracking-gap` 帧内容忍漏检。轨迹的起始与结束另记为**出现**与
+**消失**，写入 `03_tracking/cage_network_events.dat`。只有在没有 HOP 时
+（`--skip-hop`）才使用 `Unmatched` 记账节点。
 
 ### 8. 一页式报告与分类输出
 
@@ -161,7 +163,7 @@ pip install -e ".[dev]"
 ### 从 wheel
 
 ```bash
-pip install hytopo-1.0.2-py3-none-any.whl
+pip install hytopo-1.0.3-py3-none-any.whl
 ```
 
 ### 用 conda
