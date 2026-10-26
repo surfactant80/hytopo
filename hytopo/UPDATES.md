@@ -1,5 +1,19 @@
 # HyTopo 更新说明
 
+## v1.0.2 — 过渡网络记账节点改名为 Unmatched
+
+审稿意见指出：Figure 7 里的 Liquid 容易被理解为 HOP 分类出的液态水，但它其实是
+“检测不到的笼”的记账节点（笼搜索前 HOP 已排除完全液态水）。改动：
+
+- 记账节点改名为 **`Unmatched`**：图例为 `Unmatched`，列标题为
+  `Unmatched (no cage)`；出现/消失边由 `Liquid -> X`、`X -> Liquid` 变为
+  `Unmatched -> X`、`X -> Unmatched`。
+- `build_from_tracker` 同时把轨迹的起始/结束计入 `births`/`deaths`，写入
+  `03_tracking/cage_network_events.dat`（列：`cage_type appearances disappearances`）。
+- `load_from_tables` 读取旧表时自动把 `Liquid` 映射为 `Unmatched`，旧输出仍可重绘。
+- README 中英文补充说明：Unmatched 不是 HOP 态；“未匹配”不等于 LIQ；
+  相邻帧按 Jaccard 重叠 + 客体身份 + 类型连续性连接，`--tracking-gap` 容忍漏检。
+
 ## v1.0.1 — 许可证与引用
 
 - 许可证改为 **LGPL-3.0-or-later**：新增 `LICENSE`（LGPL-3.0 全文）与

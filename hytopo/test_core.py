@@ -24,7 +24,7 @@ from .nucleation import (
     read_nmax_hyd_from_timeseries,
 )
 from .tracking import CageTracker, TrackingParameters, estimate_occupancy_count
-from .network import TransitionNetwork
+from .network import TransitionNetwork, UNMATCHED_NODE
 from .extxyz import ExtXYZReader, select_extxyz_atoms
 from .phase import PHASE_SH, PHASE_SI, PHASE_SII, PhaseParameters, classify_phase
 
@@ -157,7 +157,11 @@ class TrackingTests(unittest.TestCase):
         disappeared.finalize()
         network = TransitionNetwork(".")
         network.build_from_tracker(disappeared)
-        self.assertEqual(network.transitions[("5^12", "Liquid")], 1)
+        self.assertNotIn(("5^12", "Liquid"), network.transitions)
+        self.assertEqual(network.transitions[(UNMATCHED_NODE, "5^12")], 1)
+        self.assertEqual(network.transitions[("5^12", UNMATCHED_NODE)], 1)
+        self.assertEqual(network.births["5^12"], 1)
+        self.assertEqual(network.deaths["5^12"], 1)
 
 
 class ExtXYZTests(unittest.TestCase):

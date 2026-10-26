@@ -136,9 +136,20 @@ and written to a summary plus a per-frame status table.
 ### 7. Pathway network
 
 Cage transitions are aggregated into a directed weighted network with a
-publication-style pathway figure (columns: liquid → partial/open → half →
-transition → amorphous → crystal), a side ranking of the strongest transitions,
+publication-style pathway figure, a side ranking of the strongest transitions,
 and machine-readable node/edge tables.
+
+The bookkeeping node on the left is called **`Unmatched`**, not "Liquid".
+HOP removes fully liquid water before cages are searched, so this node only
+records that no cage could be detected or matched in that frame — it is not a
+HOP LIQ water molecule, and a pathway through it does not imply a return to a
+liquid-like local environment. Tracks are linked between frames by the Jaccard
+overlap of their water sets (`--tracking-water-overlap`), guest identity and
+type continuity, with `--tracking-gap` frames of tolerance for missed
+detections; a track that survives the gap keeps its identity, so a transient
+topological rearrangement is not recorded as an Unmatched–cage–Unmatched
+excursion. A track that really starts or ends is also counted as an
+**appearance** or a **disappearance** in `03_tracking/cage_network_events.dat`.
 
 ### 8. One-page report and categorised outputs
 
@@ -178,7 +189,7 @@ pip install -e ".[dev]"
 ### From a wheel
 
 ```bash
-pip install hytopo-1.0.1-py3-none-any.whl
+pip install hytopo-1.0.2-py3-none-any.whl
 ```
 
 ### With conda
@@ -351,6 +362,7 @@ hydrate_analysis/
   03_tracking/cage_quality.dat
   03_tracking/guest_events.dat
   03_tracking/cage_transition_network_{nodes,edges}.dat
+  03_tracking/cage_network_events.dat
   04_phase/hydrate_phase_timeseries.dat
   04_phase/hydrate_phase_transitions.dat
   04_phase/phase_domains.dat

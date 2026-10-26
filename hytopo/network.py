@@ -7,6 +7,11 @@ from collections import defaultdict
 from typing import Any
 
 
+#: Bookkeeping node for "no cage detected in this frame".  It is NOT a HOP
+#: liquid state: HOP removes fully liquid water before cages are searched, so
+#: this node only records that a cage could not be matched.
+UNMATCHED_NODE = "Unmatched"
+
 class NetworkControlPanel:
     """
     Hydrate cage transition network plotting controls.
@@ -91,6 +96,7 @@ class NetworkControlPanel:
     edges_table_name = "cage_transition_network_edges.dat"
     nodes_table_name = "cage_transition_network_nodes.dat"
     output_figure_name = "cage_transition_network.png"
+    events_table_name = "cage_network_events.dat"
 
 
 class TransitionNetwork:
@@ -106,6 +112,10 @@ class TransitionNetwork:
         self.outdir = outdir
         self.transitions: defaultdict[tuple[str, str], int] = defaultdict(int)
         self.state_counts: defaultdict[str, int] = defaultdict(int)
+        #: tracks that start / end, kept separate from transitions so the
+        #: network never invents a 'liquid' state that HOP did not assign
+        self.births: defaultdict[str, int] = defaultdict(int)
+        self.deaths: defaultdict[str, int] = defaultdict(int)
         self.total_time_ns = 1.0
 
         self.standard_crystal_types = {
@@ -146,7 +156,7 @@ class TransitionNetwork:
         }
 
         self.exact_colors = {
-            "Liquid": "#536878",
+            UNMATCHED_NODE: "#536878",
             "5^12": "#D94B3D",
             "5^12_6^2": "#2E86C1",
             "5^12_6^3": "#8E58B7",
@@ -205,6 +215,8 @@ class TransitionNetwork:
 
         self.transitions.clear()
         self.state_counts.clear()
+        self.births.clear()
+        self.deaths.clear()
 
         for transition in tracker.transitions:
             self.transitions[(transition.from_type, transition.to_type)] += 1
@@ -216,14 +228,21 @@ class TransitionNetwork:
 
             if not first_cage:
                 continue
-            self.transitions[("Liquid", first_cage)] += 1
-            self.state_counts["Liquid"] += 1
+
+            # A track that starts or ends is an appearance / disappearance of a
+            # detectable cage, *not* a visit to a liquid-like local environment:
+            # HOP removes fully liquid water before cages are searched.  The
+            # bookkeeping node is called UNMATCHED_NODE, never "Liquid".
+            self.transitions[(UNMATCHED_NODE, first_cage)] += 1
+            self.state_counts[UNMATCHED_NODE] += 1
             self.state_counts[first_cage] += 1
+            self.births[first_cage] += 1
 
             if getattr(track, "end_reason", "") == "disappeared":
-                self.transitions[(track.last_type, "Liquid")] += 1
+                self.transitions[(track.last_type, UNMATCHED_NODE)] += 1
                 self.state_counts[track.last_type] += 1
-                self.state_counts["Liquid"] += 1
+                self.state_counts[UNMATCHED_NODE] += 1
+                self.deaths[track.last_type] += 1
 
     def load_from_tables(
         self,
@@ -254,6 +273,14 @@ class TransitionNetwork:
 
                 from_type = parts[0]
                 to_type = parts[1]
+
+                # older tables stored appearance/disappearance as edges to and
+                # from a bookkeeping "Liquid" node; rename it on the fly
+                if from_type == "Liquid":
+                    from_type = UNMATCHED_NODE
+                if to_type == "Liquid":
+                    to_type = UNMATCHED_NODE
+
                 count = int(parts[2])
 
                 self.transitions[(from_type, to_type)] += count
@@ -282,6 +309,10 @@ class TransitionNetwork:
                         )
 
                     node = parts[0]
+
+                    if node == "Liquid":
+                        node = UNMATCHED_NODE
+
                     count = int(parts[2])
                     self.state_counts[node] = count
         else:
@@ -313,6 +344,22 @@ class TransitionNetwork:
                 rate = weight / self.total_time_ns
                 handle.write(f"{from_type} {to_type} {weight} {rate:.6f}\n")
 
+        if self.births or self.deaths:
+            events_path = categorised_path(
+                self.outdir,
+                NetworkControlPanel.events_table_name,
+                TRACKING,
+            )
+
+            with open(events_path, "w", encoding="utf-8") as handle:
+                handle.write("# cage_type appearances disappearances\n")
+
+                for cage_type in sorted(set(self.births) | set(self.deaths)):
+                    handle.write(
+                        f"{cage_type} {self.births.get(cage_type, 0)} "
+                        f"{self.deaths.get(cage_type, 0)}\n"
+                    )
+
         with open(nodes_path, "w", encoding="utf-8") as handle:
             handle.write("# node group count\n")
 
@@ -330,7 +377,7 @@ class TransitionNetwork:
         return node
 
     def _node_group(self, node: str) -> str:
-        if node == "Liquid":
+        if node == UNMATCHED_NODE:
             return "liquid"
 
         if node.startswith("half_"):
@@ -371,8 +418,8 @@ class TransitionNetwork:
         return "white" if luminance < 150 else "#101820"
 
     def _format_node_label(self, node: str) -> str:
-        if node == "Liquid":
-            return "Liquid"
+        if node == UNMATCHED_NODE:
+            return "Unmatched"
 
         if node == "partial":
             return "partial"
@@ -454,8 +501,8 @@ class TransitionNetwork:
 
         pos: dict[str, tuple[float, float]] = {}
 
-        if "Liquid" in graph.nodes:
-            pos["Liquid"] = (x_position["liquid"], 0.0)
+        if UNMATCHED_NODE in graph.nodes:
+            pos[UNMATCHED_NODE] = (x_position["liquid"], 0.0)
 
         for group in group_order:
             nodes = grouped_nodes.get(group, [])
@@ -523,7 +570,7 @@ class TransitionNetwork:
 
             display_weight = max(weight, reverse_weight or 0)
 
-            if is_reciprocal and to_type == "Liquid":
+            if is_reciprocal and to_type == UNMATCHED_NODE:
                 source = to_type
                 target = from_type
             else:
@@ -858,7 +905,7 @@ class TransitionNetwork:
         pos: dict[str, tuple[float, float]],
     ) -> None:
         group_titles = {
-            "liquid": "Liquid",
+            "liquid": "Unmatched (no cage)",
             "partial": "Partial / open cages",
             "half": "Half cages",
             "transition": "Transition cages",
@@ -1250,7 +1297,7 @@ class TransitionNetwork:
         from matplotlib.lines import Line2D
 
         legend_items = [
-            ("liquid", "Liquid"),
+            ("liquid", "Unmatched"),
             ("partial", "Partial"),
             ("half", "Half"),
             ("transition", "Transition"),
